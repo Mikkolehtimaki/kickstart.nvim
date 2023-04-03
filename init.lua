@@ -452,7 +452,13 @@ local servers = {
   -- pyright = {},
   -- rust_analyzer = {},
   -- tsserver = {},
-  pylsp = {},
+  pylsp = {
+    plugins = {
+      pydocstyle = {
+        enbabled = true
+      },
+    },
+  },
   terraformls = {},
   tsserver = {},
   lua_ls = {
