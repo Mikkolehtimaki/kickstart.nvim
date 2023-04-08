@@ -180,12 +180,13 @@ require('lazy').setup({
   },
 
   'github/copilot.vim',
+  'tpope/vim-surround',
 
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
   --       Uncomment any of the lines below to enable them.
   -- require 'kickstart.plugins.autoformat',
-  -- require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.debug',
 }, {})
 
 vim.g.copilot_assume_mapped = true
@@ -262,8 +263,19 @@ vim.keymap.set('n', '<leader>vt', ':vsplit<Return>:te<Return>')
 for i = 1, 9 do
     local lhs = string.format("<Leader>%d", i)
     local rhs = string.format(":%dwincmd w<CR>", i)
-    vim.api.nvim_set_keymap('n', lhs, rhs, {noremap = true, silent = true})
+    vim.api.nvim_set_keymap('n', lhs, rhs, {noremap = true, silent = true, desc = {}})
 end
+-- vim.keymap.set("n", "<C-h>", "<C-w>h")
+-- vim.keymap.set("n", "<C-j>", "<C-w>j")
+-- vim.keymap.set("n", "<C-k>", "<C-w>k")
+-- vim.keymap.set("n", "<C-l>", "<C-w>l")
+
+-- split resize
+local resize_keymap_opts = { noremap = true, silent = true }
+vim.api.nvim_set_keymap('n', '<Left>', ':vertical resize -1<CR>', resize_keymap_opts)
+vim.api.nvim_set_keymap('n', '<Right>', ':vertical resize +1<CR>', resize_keymap_opts)
+vim.api.nvim_set_keymap('n', '<Up>', ':resize -1<CR>', resize_keymap_opts)
+vim.api.nvim_set_keymap('n', '<Down>', ':resize +1<CR>', resize_keymap_opts)
 
 -- [[ Plugin keybindings ]]
 vim.keymap.set('n', '<leader>gs', ':Git<Return>')
@@ -315,6 +327,7 @@ vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
+vim.keymap.set('n', '<leader>sc', require('telescope.builtin').commands, { desc = '[S]earch commands' })
 
 -- [[ Configure Treesitter ]]
 -- See `:help nvim-treesitter`
@@ -387,6 +400,17 @@ vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = "Go to next diagnos
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = "Open floating diagnostic message" })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = "Open diagnostics list" })
 
+-- Trouble
+vim.keymap.set('n', '<leader>dt', require("trouble").toggle, { desc = "[D]iagnostics list  [T]oggle" })
+
+-- copilot accept
+vim.api.nvim_set_keymap('i', '<C-space>', 'v:lua.copilot_accept()', {silent = true, expr = true, script = true})
+-- Equivalent of: let g:copilot_no_tab_map = v:true
+vim.g.copilot_no_tab_map = true
+function _G.copilot_accept()
+  return vim.call('copilot#Accept', '\\<CR>')
+end
+
 -- LSP settings.
 --  This function gets run when an LSP connects to a particular buffer.
 local on_attach = function(_, bufnr)
@@ -441,6 +465,9 @@ vim.lsp.handlers['textDocument/publishDiagnostics'] = vim.lsp.with(
   }
 )
 
+-- Setup neovim lua configuration
+require('neodev').setup()
+
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
 --
@@ -452,13 +479,8 @@ local servers = {
   -- pyright = {},
   -- rust_analyzer = {},
   -- tsserver = {},
-  pylsp = {
-    plugins = {
-      pydocstyle = {
-        enbabled = true
-      },
-    },
-  },
+  pylsp = {},
+  jsonls = {},
   terraformls = {},
   tsserver = {},
   lua_ls = {
@@ -468,9 +490,6 @@ local servers = {
     },
   },
 }
-
--- Setup neovim lua configuration
-require('neodev').setup()
 
 -- nvim-cmp supports additional completion capabilities, so broadcast that to servers
 local capabilities = vim.lsp.protocol.make_client_capabilities()
@@ -494,6 +513,28 @@ mason_lspconfig.setup_handlers {
       settings = servers[server_name],
     }
   end,
+  ["pylsp"] = function()
+    require('lspconfig').pylsp.setup {
+      capabilities = capabilities,
+      on_attach = on_attach,
+      settings = {
+        pylsp = {
+          plugins = {
+            pydocstyle = {
+              enabled = true,
+            },
+            pylint = {
+              enabled = true,
+              executable = 'python -m pylint',
+            },
+            black = {
+              enabled = true,
+            },
+          }
+        },
+      },
+    }
+  end
 }
 
 -- nvim-cmp setup

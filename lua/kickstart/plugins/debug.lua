@@ -20,7 +20,8 @@ return {
     'jay-babu/mason-nvim-dap.nvim',
 
     -- Add your own debuggers here
-    'leoluz/nvim-dap-go',
+    -- 'leoluz/nvim-dap-go',
+    'mfussenegger/nvim-dap-python', 
   },
 
   config = function()
@@ -30,13 +31,13 @@ return {
     require('mason-nvim-dap').setup {
       -- Makes a best effort to setup the various debuggers with
       -- reasonable debug configurations
-      automatic_setup = true,
+      automatic_setup = false,
 
       -- You'll need to check that you have the required things installed
       -- online, please don't ask me how to install them :)
       ensure_installed = {
         -- Update this to ensure that you have the debuggers for the langs you want
-        'delve',
+        -- 'delve',
       },
     }
 
@@ -49,10 +50,12 @@ return {
     vim.keymap.set('n', '<F1>', dap.step_into)
     vim.keymap.set('n', '<F2>', dap.step_over)
     vim.keymap.set('n', '<F3>', dap.step_out)
-    vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint)
+    vim.keymap.set('n', '<F7>', dap.terminate)
+    vim.keymap.set('n', '<F4>', dap.repl.open)
+    vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint, {desc = 'Toggle breakpoint' })
     vim.keymap.set('n', '<leader>B', function()
       dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
-    end)
+    end, {desc = 'Set breakpoint condition' })
 
     -- Dap UI setup
     -- For more information, see |:help nvim-dap-ui|
@@ -80,6 +83,10 @@ return {
     dap.listeners.before.event_exited['dapui_config'] = dapui.close
 
     -- Install golang specific config
-    require('dap-go').setup()
+    -- require('dap-go').setup()
+    require('dap-python').setup('/home/mikko/.pyenv/versions/neovim/bin/python')
+    table.insert(require('dap').configurations.python, {
+      justMyCode = false
+    })
   end,
 }
